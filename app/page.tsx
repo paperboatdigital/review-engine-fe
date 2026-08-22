@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -175,8 +176,8 @@ export default function Home() {
           <div className="flex flex-col-reverse items-center justify-between gap-4 md:flex-row">
             <div>© {new Date().getFullYear()} Paper Boat Digital — Built for local businesses</div>
             <div className="flex gap-4">
-              <a className="hover:underline" href="#">Privacy</a>
-              <a className="hover:underline" href="#">Terms</a>
+              <Link className="hover:underline" href="/privacy-policy">Privacy</Link>
+              <Link className="hover:underline" href="/terms-of-service">Terms</Link>
             </div>
           </div>
         </footer>
