@@ -1,55 +1,61 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
-  FieldError,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { toast } from '@/components/ui/toast'
+import { useSignUpMutationOptions } from '@/hooks/useSignUpMutaion'
+import { cn, handleApiError } from '@/lib/utils'
+import { signUpPayloadSchema, SignUpPayloadSchemaType } from '@/schemas/auth'
+import { zodResolver } from '@hookform/resolvers/zod'
 import {
   IconBrandAppleFilled,
   IconBrandGoogleFilled,
   IconBrandMeta,
 } from '@tabler/icons-react'
+import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
-
-import * as z from 'zod'
+import { useRouter } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-
-const signUpFormSchema = z
-  .object({
-    email: z.email('Please enter a valid email address.'),
-    password: z.string().min(8, 'Password must be at least 8 characters.'),
-    confirmPassword: z.string().min(1, 'Please confirm your password.'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ['confirmPassword'],
-    message: 'Passwords do not match.',
-  })
 
 export function SignUpForm({
   className,
   ...props
 }: React.ComponentProps<'div'> & { size?: 'default' | 'sm' }) {
-  const signUpForm = useForm<z.infer<typeof signUpFormSchema>>({
-    resolver: zodResolver(signUpFormSchema),
+  const router = useRouter()
+  const { mutateAsync, isPending } = useMutation(useSignUpMutationOptions())
+
+  const signUpForm = useForm<SignUpPayloadSchemaType>({
+    resolver: zodResolver(signUpPayloadSchema),
     defaultValues: {
       email: '',
       password: '',
       confirmPassword: '',
     },
+    disabled: isPending,
   })
 
-  function onSubmit(data: z.infer<typeof signUpFormSchema>) {
-    // Do something with the form values.
-    console.log(data)
+  async function onSubmit(data: SignUpPayloadSchemaType) {
+    try {
+      await mutateAsync(data)
+      signUpForm.reset()
+      toast.add({
+        type: 'success',
+        title: 'Account Created Successfully',
+        description: 'Please check your email to verify your account.',
+      })
+      router.push('/sign-in')
+    } catch (error) {
+      handleApiError(error)
+    }
   }
 
   return (
@@ -132,7 +138,9 @@ export function SignUpForm({
             />
 
             <Field>
-              <Button type="submit">Create Account</Button>
+              <Button type="submit" disabled={isPending}>
+                Create Account
+              </Button>
             </Field>
 
             <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">

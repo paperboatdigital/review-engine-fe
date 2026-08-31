@@ -11,37 +11,41 @@ import {
   FieldSeparator,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import { useSignInMutationOptions } from '@/hooks/useSignInMutation'
+import { cn, handleApiError } from '@/lib/utils'
+import { signInPayloadSchema, SignInPayloadSchemaType } from '@/schemas/auth'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   IconBrandAppleFilled,
   IconBrandGoogleFilled,
   IconBrandMeta,
 } from '@tabler/icons-react'
+import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Controller, useForm } from 'react-hook-form'
-import * as z from 'zod'
-
-const signInFormSchema = z.object({
-  email: z.email("Please enter a valid email address."),
-  password: z.string().min(8, 'Password must be at least 8 characters.'),
-})
 
 export function SignInForm({
   className,
   ...props
 }: React.ComponentProps<'div'> & { size?: 'default' | 'sm' }) {
-  const signInForm = useForm<z.infer<typeof signInFormSchema>>({
-    resolver: zodResolver(signInFormSchema),
+  const { mutateAsync, isPending } = useMutation(useSignInMutationOptions())
+
+  const signInForm = useForm<SignInPayloadSchemaType>({
+    resolver: zodResolver(signInPayloadSchema),
     defaultValues: {
       email: '',
       password: '',
     },
+    disabled: isPending,
   })
 
-  function onSubmit(data: z.infer<typeof signInFormSchema>) {
-    // Do something with the form values.
-    console.log(data)
+  async function onSubmit(data: SignInPayloadSchemaType) {
+    try {
+      await mutateAsync(data)
+      signInForm.reset()
+    } catch (error) {
+      handleApiError(error)
+    }
   }
 
   return (
@@ -108,7 +112,9 @@ export function SignInForm({
             />
 
             <Field>
-              <Button type="submit">Sign In</Button>
+              <Button type="submit" disabled={isPending}>
+                Sign In
+              </Button>
             </Field>
 
             <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
